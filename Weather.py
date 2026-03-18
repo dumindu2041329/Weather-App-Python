@@ -28,10 +28,13 @@ INIT_H = 580
 
 # ─────────────────────── Helpers ─────────────────────────────
 
+
 def draw_gradient(canvas, w, h, color1, color2, steps=120):
     """Draw a vertical gradient on a Canvas."""
-    r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
-    r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
+    r1, g1, b1 = int(color1[1:3], 16), int(
+        color1[3:5], 16), int(color1[5:7], 16)
+    r2, g2, b2 = int(color2[1:3], 16), int(
+        color2[3:5], 16), int(color2[5:7], 16)
     for i in range(steps):
         t = i / steps
         r = int(r1 + (r2 - r1) * t)
@@ -113,15 +116,18 @@ textfield = tk.Entry(root, justify="left", width=24,
                      insertbackground=ACCENT_BLUE, border=0, relief="flat")
 textfield.focus()
 
+
 def _on_focus_in(e):
     if textfield.get() == "Enter city name...":
         textfield.delete(0, tk.END)
         textfield.config(fg=TEXT_PRIMARY)
 
+
 def _on_focus_out(e):
     if textfield.get() == "":
         textfield.insert(0, "Enter city name...")
         textfield.config(fg=TEXT_MUTED)
+
 
 textfield.insert(0, "Enter city name...")
 textfield.config(fg=TEXT_MUTED)
@@ -134,8 +140,10 @@ search_btn = tk.Button(root, text="🔍", font=("Helvetica", 16),
                        activeforeground=BG_DEEP,
                        border=0, cursor="hand2",
                        command=lambda: getWeather())
-search_btn.bind("<Enter>", lambda e: search_btn.config(bg=ACCENT_BLUE, fg=BG_DEEP))
-search_btn.bind("<Leave>", lambda e: search_btn.config(bg=GLASS_FILL, fg=ACCENT_BLUE))
+search_btn.bind("<Enter>", lambda e: search_btn.config(
+    bg=ACCENT_BLUE, fg=BG_DEEP))
+search_btn.bind("<Leave>", lambda e: search_btn.config(
+    bg=GLASS_FILL, fg=ACCENT_BLUE))
 
 # ═════════════════ SECTION 2 — Left Panel ═════════════════════
 
@@ -164,9 +172,9 @@ feels_label = tk.Label(root, text="", font=("Helvetica", 12),
 
 # ═════════════════ SECTION 4 — Stats Bar ══════════════════════
 
-STAT_ICONS  = ["💨", "💧", "📋", "🌡️"]
+STAT_ICONS = ["💨", "💧", "📋", "🌡️"]
 STAT_TITLES = ["WIND", "HUMIDITY", "DESCRIPTION", "PRESSURE"]
-STAT_UNITS  = ["m/s", "%", "", "hPa"]
+STAT_UNITS = ["m/s", "%", "", "hPa"]
 
 stat_value_labels = []
 for _ in range(4):
@@ -179,31 +187,32 @@ for _ in range(4):
 
 _resize_job = None
 
-def layout(w=None, h=None):
+
+def layout(w: int = 0, h: int = 0):
     """Redraw the entire UI for the given window dimensions."""
-    if w is None:
-        w = root.winfo_width()
-    if h is None:
-        h = root.winfo_height()
+    if not w:
+        w = int(root.winfo_width())
+    if not h:
+        h = int(root.winfo_height())
     if w < 10 or h < 10:
         return  # Window not yet realized
 
-    PAD     = 30           # Outer padding
-    GAP     = 18           # Gap between left/right main panels
+    PAD = 30           # Outer padding
+    GAP = 18           # Gap between left/right main panels
     STATS_H = 160          # Fixed stats bar height
     SEARCH_H = 52
     SEARCH_Y = 22
-    MAIN_Y  = SEARCH_Y + SEARCH_H + 18
+    MAIN_Y = SEARCH_Y + SEARCH_H + 18
     STATS_Y = h - STATS_H - PAD
-    MAIN_H  = max(STATS_Y - MAIN_Y - 12, 80)
+    MAIN_H = max(STATS_Y - MAIN_Y - 12, 80)
 
     INNER_W = w - PAD * 2
-    LEFT_W  = max(int(INNER_W * 0.42), 260)
+    LEFT_W = max(int(INNER_W * 0.42), 260)
     RIGHT_X = PAD + LEFT_W + GAP
     RIGHT_W = max(INNER_W - LEFT_W - GAP, 200)
 
     CARD_PAD = 12
-    CARD_W   = max((INNER_W - CARD_PAD * 3) // 4, 120)
+    CARD_W = max((INNER_W - CARD_PAD * 3) // 4, 120)
 
     # ── Redraw canvas ──────────────────────────────────────────
     bg_canvas.config(width=w, height=h)
@@ -273,7 +282,7 @@ def _on_resize(event):
         return
     if _resize_job:
         root.after_cancel(_resize_job)
-    _resize_job = root.after(30, lambda: layout(event.width, event.height))
+    _resize_job = root.after(30, layout, event.width, event.height)
 
 
 root.bind("<Configure>", _on_resize)
@@ -314,19 +323,18 @@ def _fetch_weather(city):
 
         obj = TimezoneFinder()
         result = obj.timezone_at(lng=location.longitude, lat=location.latitude)
+        if result is None:
+            result = "UTC"
         home = pytz.timezone(result)
         local_time = datetime.now(home)
         current_time = local_time.strftime("%I:%M %p")
         current_date = local_time.strftime("%A, %d %B %Y")
 
         # ── Weather API ──
-        api = (
-            "https://api.openweathermap.org/data/2.5/weather?q="
-            + city
-            + "&appid=0939196fa24fdb0a34470cc229abf7a4"
-        )
+        api = "https://api.openweathermap.org/data/2.5/weather"
+        params = {"q": city, "appid": "0939196fa24fdb0a34470cc229abf7a4"}
 
-        json_data = requests.get(api, timeout=10).json()
+        json_data = requests.get(api, params=params, timeout=10).json()
 
         if json_data.get("cod") != 200:
             root.after(0, _show_error, "City not found. Try again.")
@@ -345,8 +353,10 @@ def _fetch_weather(city):
                    condition, description, temp, feels_like,
                    wind, humidity, pressure)
 
-    except Exception:
-        root.after(0, _show_error, "Something went wrong. Check your connection.")
+    except Exception as e:
+        print(f"Error fetching weather: {e}")
+        root.after(0, _show_error,
+                   "Something went wrong. Check your connection.")
 
 
 def _update_ui(city, time_str, date_str, condition, description,
@@ -383,6 +393,7 @@ def _show_error(msg):
 
 def _on_return(event):
     getWeather()
+
 
 textfield.bind("<Return>", _on_return)
 
